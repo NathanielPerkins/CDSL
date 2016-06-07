@@ -23,19 +23,19 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: CDSL
+all: ECDSL
 
 # Tool invocations
-CDSL: $(OBJS) $(USER_OBJS)
+ECDSL: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Cross GCC Linker'
-	gcc  -o "CDSL" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc  -o "ECDSL" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(EXECUTABLES)$(OBJS)$(C_DEPS) CDSL
+	-$(RM) $(EXECUTABLES)$(OBJS)$(C_DEPS) ECDSL
 	-@echo ' '
 
 .PHONY: all clean dependents

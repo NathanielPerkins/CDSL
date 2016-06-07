@@ -4,16 +4,19 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../src/CDSL.c \
-../src/LinkedList.c 
+../src/ECDSL.c \
+../src/LinkedList.c \
+../src/RingBuffer.c 
 
 OBJS += \
-./src/CDSL.o \
-./src/LinkedList.o 
+./src/ECDSL.o \
+./src/LinkedList.o \
+./src/RingBuffer.o 
 
 C_DEPS += \
-./src/CDSL.d \
-./src/LinkedList.d 
+./src/ECDSL.d \
+./src/LinkedList.d \
+./src/RingBuffer.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
