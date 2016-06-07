@@ -4,12 +4,21 @@ Light weight, low memory implementations of common programming data structures a
 This repository uses Git-flow, an example of which can be seen  https://www.atlassian.com/git/tutorials/comparing-workflows/centralized-workflow
 
 To Be Implemented 
+
 Data Structures:
+
 Doubly Linked List
+
 Binary Tree
+
 Hash Tables
+
 Heap
 
+
 Algorithms:
+
 Heap-Sort
+
 quick-Sort
+
