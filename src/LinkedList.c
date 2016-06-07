@@ -16,6 +16,7 @@ void print_list(struct node* head) {
         current = current->next;
     }
 }
+
 void push(struct node* head, int data){
 	struct node* current = head;
 	while (current->next != NULL){
@@ -25,6 +26,29 @@ void push(struct node* head, int data){
 	current->next->data = data;
 	current->next->next = NULL;
 }
+
+void push_start(struct node** head, int data){
+	struct node* oldHead = *head;
+	struct node* newHead = malloc(sizeof(struct node));
+	newHead->data = data;
+	newHead->next = oldHead;
+	*head = newHead;
+}
+
+int find_value(struct node* head,int value){
+	if(head == NULL){
+		return 1; //return 1 = no linked list
+	}
+	struct node* current = head;
+	while(current != NULL){
+		if(current->data == value){
+			return 0; // exit success, it's in the list
+		}
+		current = current->next;
+	}
+	return 2; //return 2 = not in array
+}
+
 int pop(struct node* head){
 	if (head == NULL) return -1;
 	int data;
@@ -45,7 +69,19 @@ int pop(struct node* head){
 	return data;
 }
 
-int delete_list(struct node** head){
+int pop_start(struct node** head){
+	if (*head == NULL){
+		return -1;
+	}
+	struct node* next;
+	next = (*head)->next;
+	int data;
+	data = (*head)->data;
+	*head = next;
+	return data;
+}
+
+void delete_list(struct node** head){
 	struct node *next, *deleteMe;
 	deleteMe = *head;
 	while (deleteMe) {
