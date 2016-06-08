@@ -10,7 +10,7 @@
 
 #include "HashMap.h"
 
-#define HASHMAP_SIZE 10
+#define HASHMAP_SIZE 2
 
 int main(void) {
     struct hm_hashmap hashmap;
@@ -28,11 +28,13 @@ int main(void) {
     hm_put(&hashmap, "test_key3", &test_value3);
     hm_put(&hashmap, "test_key4", &test_value4);
 
-    hm_put(&hashmap, "test_key3", &test_value69);
+    hm_put(&hashmap, "test_key69", &test_value69);
+
+    hm_put(&hashmap, "test_key6", &test_value1);
 
     char key[16];
     void *value;
-    for (int i = 4; i >= 1; i--) {
+    for (int i = hashmap.size; i >= 1; i--) {
         sprintf(key, "test_key%d", i);
         value = hm_get(&hashmap, key);
         printf("Getting Key: %s, Value: %s\n", key, value);
@@ -41,7 +43,7 @@ int main(void) {
     value = hm_get(&hashmap, "doesnt_exist");
     value == NULL ? printf("Key not found\n") : printf("Getting Key: %s, Value: %s\n", key, value);
 
-    printf("Number of entries: %d\n", hashmap.entries);
+    hm_free(&hashmap);
 
     return EXIT_SUCCESS;
 }

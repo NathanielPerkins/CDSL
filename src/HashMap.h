@@ -11,6 +11,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define LOAD_FACTOR 0.8
+
 struct hm_entry {
     void *key;
     void *value;
@@ -24,6 +26,8 @@ struct hm_hashmap {
 };
 
 void hm_create(struct hm_hashmap *hashmap, uint32_t size);
+
+void hm_free(struct hm_hashmap *hashmap);
 
 void hm_put(struct hm_hashmap *hashmap, void *key, void *value);
 

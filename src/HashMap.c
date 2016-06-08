@@ -11,13 +11,39 @@
 #include <string.h> // strcmp()
 
 void hm_create(struct hm_hashmap *hashmap, uint32_t size) {
-    hashmap->table = calloc(size, sizeof(struct hm_entry));
-    hashmap->size = size;
     hashmap->entries = 0;
+    hashmap->size = size;
+    hashmap->table = calloc(size, sizeof(struct hm_entry));
 }
 
+void hm_free(struct hm_hashmap *hashmap) {
+    struct hm_entry *entry;
+    struct hm_entry *temp;
+
+    for (int i = 0; i < hashmap->size; i++) {
+        entry = &(hashmap->table[i]);
+
+        if (entry->key != NULL) {
+            /* First value is stored in the array, don't free it. */
+            entry = entry->next;
+
+            /* Check for chained entries. */
+            while (entry != NULL) {
+                temp = entry;
+                entry = entry->next;
+                free(temp);
+            }
+        }
+    }
+
+    free(hashmap->table);
+}
+
+
 void hm_put(struct hm_hashmap *hashmap, void *key, void *value) {
-    // TODO: Check if resize is needed. Probably use 0.8 as load factor.
+    if (((double)hashmap->entries / hashmap->size) > LOAD_FACTOR) { // Resize the array.
+        hm_resize(hashmap);
+    }
 
     uint32_t hash = hm_hash(key);
     uint32_t bucket = hash % hashmap->size;
@@ -88,5 +114,30 @@ static uint32_t hm_hash(char *key) {
 }
 
 static void hm_resize(struct hm_hashmap *hashmap) {
+    uint32_t old_size = hashmap->size;
+    struct hm_entry *old_table = hashmap->table;
 
+    hm_create(hashmap, hashmap->size * 2);
+    struct hm_entry *entry;
+    struct hm_entry *old_entry;
+
+    for (int i = 0; i < old_size; i++) {
+        entry = &(old_table[i]);
+
+        if (entry->key != NULL) {
+            /* First value is stored in the array, don't free it. */
+            hm_put(hashmap, entry->key, entry->value);
+            entry = entry->next;
+
+            /* Check for chained entries. */
+            while (entry != NULL) {
+                hm_put(hashmap, entry->key, entry->value);
+                old_entry = entry;
+                entry = entry->next;
+                free(old_entry);
+            }
+        }
+    }
+
+    free(old_table);
 }
