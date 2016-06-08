@@ -6,18 +6,22 @@
  */
 #include "LinkedList.h"
 
+struct node sll_init(void* value){
+
+}
+
 void print_list(struct node* head) {
     struct node* current = head;
     if (head == NULL){
     	printf("List Empty\n");
     }
     while (current != NULL) {
-        printf("%d\n", current->data);
+        printf("%d\n", *(float*)current->data);
         current = current->next;
     }
 }
 
-void push(struct node* head, int data){
+void push(struct node* head, void* data){
 	struct node* current = head;
 	while (current->next != NULL){
 		current = current->next;
@@ -27,7 +31,7 @@ void push(struct node* head, int data){
 	current->next->next = NULL;
 }
 
-void push_start(struct node** head, int data){
+void push_start(struct node** head, void* data){
 	struct node* oldHead = *head;
 	struct node* newHead = malloc(sizeof(struct node));
 	newHead->data = data;
@@ -35,7 +39,7 @@ void push_start(struct node** head, int data){
 	*head = newHead;
 }
 
-int find_value(struct node* head,int value){
+int find_value(struct node* head, void* value){
 	if(head == NULL){
 		return 1; //return 1 = no linked list
 	}
@@ -49,9 +53,9 @@ int find_value(struct node* head,int value){
 	return 2; //return 2 = not in array
 }
 
-int pop(struct node* head){
+void* pop(struct node* head){
 	if (head == NULL) return -1;
-	int data;
+	void* data;
 	struct node* current = head;
 	struct node* prev = NULL;
 	if(head->next == NULL){
@@ -69,13 +73,13 @@ int pop(struct node* head){
 	return data;
 }
 
-int pop_start(struct node** head){
+void* pop_start(struct node** head){
 	if (*head == NULL){
 		return -1;
 	}
 	struct node* next;
 	next = (*head)->next;
-	int data;
+	void* data;
 	data = (*head)->data;
 	*head = next;
 	return data;
