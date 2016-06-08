@@ -1,5 +1,5 @@
 /*
- * HashTable.c
+ * HashMap.c
  *
  * Created on: 07/06/2016
  * Author: Shaun Karran
@@ -10,60 +10,64 @@
 #include <stdlib.h> // malloc()
 #include <string.h> // strcmp()
 
-#include <stdio.h> // For debugging.
-
-void ht_create(struct ht_table *hash_table, uint32_t size) {
-    hash_table->table = calloc(size, sizeof(struct ht_entry *));
-    hash_table->size = size;
-    hash_table->entries = 0;
+void ht_create(struct ht_hashmap *hashmap, uint32_t size) {
+    hashmap->table = calloc(size, sizeof(struct ht_entry));
+    hashmap->size = size;
+    hashmap->entries = 0;
 }
 
-void ht_put(struct ht_table *hash_table, char *key, int32_t value) {
+void ht_put(struct ht_hashmap *hashmap, void *key, void *value) {
     // TODO: Check if resize is needed. Probably use 0.8 as load factor.
 
-    uint32_t bucket = ht_hash(key) % hash_table->size;
+    uint32_t hash = ht_hash(key);
+    uint32_t bucket = hash % hashmap->size;
 
-    /* Address of previous 'next' value. Points to bucket for case when bucket is empty.
-     * This is done to combine the case of adding new entry to empty bucket and adding to chain. */
-    struct ht_entry **prev_next = &(hash_table->table[bucket]);
-    struct ht_entry *entry = hash_table->table[bucket];
+    struct ht_entry *entry = &(hashmap->table[bucket]);
+    struct ht_entry *prev = entry;
 
+    if (entry->key == NULL) { // Empty bucket.
+        entry->key = key;
+        entry->value = value;
+        entry->next = NULL;
+        hashmap->entries++;
+        return;
+    }
+
+    /* Iterate over entries in bucket. */
     while (entry != NULL) {
-        if (strcmp(key, entry->key) == 0) { // Key already exists, overwrite value.
+        if (strcmp(key, entry->key) == 0) { // Key exists, update value.
             entry->value = value;
             return;
-        } else { // Check next entry in chain.
-            prev_next = &(entry->next);
+        } else {
+            prev = entry;
             entry = entry->next;
         }
     }
 
-    /* Key doesnt exist, add to chain of entries in the bucket. */
+    /* Add to chain of entries. */
     struct ht_entry *new_entry = malloc(sizeof(struct ht_entry));
-    new_entry->key = malloc(sizeof(char) * strlen(key)); // Allocate memory for key.
-    strcpy(new_entry->key, key);
+    new_entry->key = key;
     new_entry->value = value;
     new_entry->next = NULL;
 
-    *prev_next = new_entry;
-    hash_table->entries++;
+    prev->next = new_entry;
+    hashmap->entries++;
 }
 
-void ht_get(struct ht_table *hash_table, char *key, int32_t *value) {
-    uint32_t bucket = ht_hash(key) % hash_table->size;
+void* ht_get(struct ht_hashmap *hashmap, void *key) {
+    uint32_t bucket = ht_hash(key) % hashmap->size;
 
-    struct ht_entry *entry = hash_table->table[bucket];
+    struct ht_entry *entry = &(hashmap->table[bucket]);
 
-    while (entry != NULL) {
+    while (entry != NULL && entry->key != NULL) {
         if (strcmp(key, entry->key) == 0) {
-            *value = entry->value;
-            return;
+            return entry->value;
         } else {
             entry = entry->next;
         }
     }
 
-    *value = NULL; /* Key not found. */
+    return NULL; /* Key not found. */
 }
 
 // Simple Bob Jenkins's hash algorithm taken from the wikipedia description.
@@ -83,6 +87,6 @@ static uint32_t ht_hash(char *key) {
     return hash;
 }
 
-static void ht_resize(struct ht_table *hash_table) {
+static void ht_resize(struct ht_hashmap *hashmap) {
 
 }

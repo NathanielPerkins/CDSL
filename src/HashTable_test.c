@@ -10,28 +10,38 @@
 
 #include "HashTable.h"
 
-#define TABLE_SIZE 5
+#define TABLE_SIZE 10
 
 int main(void) {
-    struct ht_table hash_table;
+    struct ht_hashmap hashmap;
 
-    ht_create(&hash_table, TABLE_SIZE);
+    ht_create(&hashmap, TABLE_SIZE);
 
-    char key[8];
-    for (int i = 0; i < 10; i++) {
-        sprintf(key, "key_%d", i);
-        printf("Putting value %d with key %s.\n", i, key);
-        ht_put(&hash_table, key, i);
+    char test_value1[] = "test_value1";
+    char test_value2[] = "test_value2";
+    char test_value3[] = "test_value3";
+    char test_value4[] = "test_value4";
+    char test_value69[]  = "test_value69";
+
+    ht_put(&hashmap, "test_key1", &test_value1);
+    ht_put(&hashmap, "test_key2", &test_value2);
+    ht_put(&hashmap, "test_key3", &test_value3);
+    ht_put(&hashmap, "test_key4", &test_value4);
+
+    ht_put(&hashmap, "test_key3", &test_value69);
+
+    char key[16];
+    void *value;
+    for (int i = 4; i >= 1; i--) {
+        sprintf(key, "test_key%d", i);
+        value = ht_get(&hashmap, key);
+        printf("Getting Key: %s, Value: %s\n", key, value);
     }
 
-    ht_put(&hash_table, "key_5", 69);
+    value = ht_get(&hashmap, "doesnt_exist");
+    value == NULL ? printf("Key not found\n") : printf("Getting Key: %s, Value: %s\n", key, value);
 
-    int32_t value;
-    for (int i = 9; i >= 1; i--) {
-        sprintf(key, "key_%d", i);
-        ht_get(&hash_table, key, &value);
-        printf("Getting Key: %s, Value: %d\n", key, value);
-    }
+    printf("Number of entries: %d\n", hashmap.entries);
 
     return EXIT_SUCCESS;
 }
