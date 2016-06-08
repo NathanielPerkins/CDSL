@@ -5,25 +5,25 @@
  * Author: Shaun Karran
  */
 
-#include "HashTable.h"
+#include "HashMap.h"
 
 #include <stdlib.h> // malloc()
 #include <string.h> // strcmp()
 
-void ht_create(struct ht_hashmap *hashmap, uint32_t size) {
-    hashmap->table = calloc(size, sizeof(struct ht_entry));
+void hm_create(struct hm_hashmap *hashmap, uint32_t size) {
+    hashmap->table = calloc(size, sizeof(struct hm_entry));
     hashmap->size = size;
     hashmap->entries = 0;
 }
 
-void ht_put(struct ht_hashmap *hashmap, void *key, void *value) {
+void hm_put(struct hm_hashmap *hashmap, void *key, void *value) {
     // TODO: Check if resize is needed. Probably use 0.8 as load factor.
 
-    uint32_t hash = ht_hash(key);
+    uint32_t hash = hm_hash(key);
     uint32_t bucket = hash % hashmap->size;
 
-    struct ht_entry *entry = &(hashmap->table[bucket]);
-    struct ht_entry *prev = entry;
+    struct hm_entry *entry = &(hashmap->table[bucket]);
+    struct hm_entry *prev = entry;
 
     if (entry->key == NULL) { // Empty bucket.
         entry->key = key;
@@ -45,7 +45,7 @@ void ht_put(struct ht_hashmap *hashmap, void *key, void *value) {
     }
 
     /* Add to chain of entries. */
-    struct ht_entry *new_entry = malloc(sizeof(struct ht_entry));
+    struct hm_entry *new_entry = malloc(sizeof(struct hm_entry));
     new_entry->key = key;
     new_entry->value = value;
     new_entry->next = NULL;
@@ -54,10 +54,10 @@ void ht_put(struct ht_hashmap *hashmap, void *key, void *value) {
     hashmap->entries++;
 }
 
-void* ht_get(struct ht_hashmap *hashmap, void *key) {
-    uint32_t bucket = ht_hash(key) % hashmap->size;
+void* hm_get(struct hm_hashmap *hashmap, void *key) {
+    uint32_t bucket = hm_hash(key) % hashmap->size;
 
-    struct ht_entry *entry = &(hashmap->table[bucket]);
+    struct hm_entry *entry = &(hashmap->table[bucket]);
 
     while (entry != NULL && entry->key != NULL) {
         if (strcmp(key, entry->key) == 0) {
@@ -71,7 +71,7 @@ void* ht_get(struct ht_hashmap *hashmap, void *key) {
 }
 
 // Simple Bob Jenkins's hash algorithm taken from the wikipedia description.
-static uint32_t ht_hash(char *key) {
+static uint32_t hm_hash(char *key) {
     size_t len = strlen(key);
     uint32_t hash = 0;
 
@@ -87,6 +87,6 @@ static uint32_t ht_hash(char *key) {
     return hash;
 }
 
-static void ht_resize(struct ht_hashmap *hashmap) {
+static void hm_resize(struct hm_hashmap *hashmap) {
 
 }
