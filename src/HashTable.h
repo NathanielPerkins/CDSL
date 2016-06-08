@@ -27,9 +27,11 @@ struct ht_table {
 void ht_create(struct ht_table *hash_table, uint32_t size);
 
 void ht_put(struct ht_table *hash_table, char *key, int32_t value);
+
 void ht_get(struct ht_table *hash_table, char *key, int32_t *value);
 
 static uint32_t ht_hash(char *key);
+
 static void ht_resize(struct ht_table *hash_table);
 
 #endif /* HASHTABLE_H_ */
