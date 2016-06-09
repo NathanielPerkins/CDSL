@@ -10,31 +10,33 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #define LOAD_FACTOR 0.8
 
-struct hm_entry {
-    void *key;
-    void *value;
-    struct hm_entry *next; // Used for separate chaining.
+struct hashmap_node_t {
+    char *key;
+    void *data;
+    size_t data_size;
+    struct hashmap_node_t *next; // Used for separate chaining.
 };
 
-struct hm_hashmap {
-    struct hm_entry *table;
+struct hashmap_t {
+    struct hashmap_node_t *table;
     uint32_t size;
     uint32_t entries;
 };
 
-void hm_create(struct hm_hashmap *hashmap, uint32_t size);
+struct hashmap_t *hm_create(uint32_t size);
 
-void hm_free(struct hm_hashmap *hashmap);
+void hm_free(struct hashmap_t *hashmap);
 
-void hm_put(struct hm_hashmap *hashmap, void *key, void *value);
+void hm_put(struct hashmap_t *hashmap, char *key, void *data, size_t data_size);
 
-void* hm_get(struct hm_hashmap *hashmap, void *key);
+void *hm_get(struct hashmap_t *hashmap, char *key);
 
-static uint32_t hm_hash(char *key);
+uint32_t hm_hash(char *key);
 
-static void hm_resize(struct hm_hashmap *hashmap);
+void hm_resize(struct hashmap_t *hashmap);
 
 #endif /* HASHMAP_H_ */

@@ -7,97 +7,109 @@
 
 #include "HashMap.h"
 
-#include <stdlib.h> // malloc()
 #include <string.h> // strcmp()
 
-void hm_create(struct hm_hashmap *hashmap, uint32_t size) {
+struct hashmap_t *hm_create(uint32_t size) {
+    struct hashmap_t *hashmap = malloc(sizeof(struct hashmap_t));
     hashmap->entries = 0;
     hashmap->size = size;
-    hashmap->table = calloc(size, sizeof(struct hm_entry));
+    hashmap->table = calloc(size, sizeof(struct hashmap_node_t));
+
+    return hashmap;
 }
 
-void hm_free(struct hm_hashmap *hashmap) {
-    struct hm_entry *entry;
-    struct hm_entry *temp;
+void hm_free(struct hashmap_t *hashmap) {
+    struct hashmap_node_t *node;
+    struct hashmap_node_t *temp;
 
     for (int i = 0; i < hashmap->size; i++) {
-        entry = &(hashmap->table[i]);
+        node = &(hashmap->table[i]);
 
-        if (entry->key != NULL) {
-            /* First value is stored in the array, don't free it. */
-            entry = entry->next;
+        if (node->key != NULL) {
+            /* First data is stored in the array, don't free it. */
+            node = node->next;
 
             /* Check for chained entries. */
-            while (entry != NULL) {
-                temp = entry;
-                entry = entry->next;
+            while (node != NULL) {
+                free(node->key);
+                free(node->data);
+                temp = node;
+                node = node->next;
                 free(temp);
             }
         }
     }
 
     free(hashmap->table);
+    free(hashmap);
 }
 
-
-void hm_put(struct hm_hashmap *hashmap, void *key, void *value) {
-    if (((double)hashmap->entries / hashmap->size) > LOAD_FACTOR) { // Resize the array.
+void hm_put(struct hashmap_t *hashmap, char *key, void *data, size_t data_size) {
+    if (((double) hashmap->entries / hashmap->size) > LOAD_FACTOR) { /* Resize the array. */
         hm_resize(hashmap);
     }
 
     uint32_t hash = hm_hash(key);
     uint32_t bucket = hash % hashmap->size;
 
-    struct hm_entry *entry = &(hashmap->table[bucket]);
-    struct hm_entry *prev = entry;
+    struct hashmap_node_t *node = &(hashmap->table[bucket]);
+    struct hashmap_node_t *prev = node;
+    if (node->key == NULL) { /* Empty bucket. */
+        node->key = malloc(sizeof(char) * strlen(key));
+        node->data = malloc(data_size);
+        strcpy(node->key, key);
+        memcpy(node->data, data, data_size);
+        node->data_size = data_size;
+        node->next = NULL;
 
-    if (entry->key == NULL) { // Empty bucket.
-        entry->key = key;
-        entry->value = value;
-        entry->next = NULL;
         hashmap->entries++;
         return;
     }
 
-    /* Iterate over entries in bucket. */
-    while (entry != NULL) {
-        if (strcmp(key, entry->key) == 0) { // Key exists, update value.
-            entry->value = value;
+    /* Iterate over nodes in bucket and check for existing key. */
+    while (node != NULL) {
+        if (strcmp(key, node->key) == 0) { /* Key already exists, overwrite data. */
+            free(node->data);
+            node->data = malloc(data_size);
+            memcpy(node->data, data, data_size);
+            node->data_size = data_size;
             return;
-        } else {
-            prev = entry;
-            entry = entry->next;
+        } else { /* Check next node in chain. */
+            prev = node;
+            node = node->next;
         }
     }
 
     /* Add to chain of entries. */
-    struct hm_entry *new_entry = malloc(sizeof(struct hm_entry));
-    new_entry->key = key;
-    new_entry->value = value;
-    new_entry->next = NULL;
+    struct hashmap_node_t *new_node = malloc(sizeof(struct hashmap_node_t));
+    new_node->key = malloc(sizeof(char) * strlen(key));
+    new_node->data = malloc(data_size);
+    strcpy(new_node->key, key);
+    memcpy(new_node->data, data, data_size);
+    new_node->data_size = data_size;
+    new_node->next = NULL;
 
-    prev->next = new_entry;
+    prev->next = new_node;
     hashmap->entries++;
 }
 
-void* hm_get(struct hm_hashmap *hashmap, void *key) {
+void *hm_get(struct hashmap_t *hashmap, char *key) {
     uint32_t bucket = hm_hash(key) % hashmap->size;
 
-    struct hm_entry *entry = &(hashmap->table[bucket]);
-
-    while (entry != NULL && entry->key != NULL) {
-        if (strcmp(key, entry->key) == 0) {
-            return entry->value;
+    struct hashmap_node_t *node = &(hashmap->table[bucket]);
+    while (node != NULL && node->key != NULL) {
+        if (strcmp(key, node->key) == 0) {
+            return node->data;
         } else {
-            entry = entry->next;
+            node = node->next;
         }
     }
 
     return NULL; /* Key not found. */
 }
 
-// Simple Bob Jenkins's hash algorithm taken from the wikipedia description.
-static uint32_t hm_hash(char *key) {
+/* Simple Bob Jenkins's hash algorithm taken from the wikipedia description. */
+uint32_t hm_hash(char *key) {
     size_t len = strlen(key);
     uint32_t hash = 0;
 
@@ -113,28 +125,31 @@ static uint32_t hm_hash(char *key) {
     return hash;
 }
 
-static void hm_resize(struct hm_hashmap *hashmap) {
+void hm_resize(struct hashmap_t *hashmap) {
     uint32_t old_size = hashmap->size;
-    struct hm_entry *old_table = hashmap->table;
+    struct hashmap_node_t *old_table = hashmap->table;
 
-    hm_create(hashmap, hashmap->size * 2);
-    struct hm_entry *entry;
-    struct hm_entry *old_entry;
+    hashmap->entries = 0;
+    hashmap->size = old_size * 2;
+    hashmap->table = calloc(hashmap->size, sizeof(struct hashmap_node_t));
 
+
+    struct hashmap_node_t *node;
+    struct hashmap_node_t *old_node;
     for (int i = 0; i < old_size; i++) {
-        entry = &(old_table[i]);
+        node = &(old_table[i]);
 
-        if (entry->key != NULL) {
-            /* First value is stored in the array, don't free it. */
-            hm_put(hashmap, entry->key, entry->value);
-            entry = entry->next;
+        if (node->key != NULL) {
+            /* First data is stored in the array, don't free it. */
+            hm_put(hashmap, node->key, node->data, node->data_size);
+            node = node->next;
 
             /* Check for chained entries. */
-            while (entry != NULL) {
-                hm_put(hashmap, entry->key, entry->value);
-                old_entry = entry;
-                entry = entry->next;
-                free(old_entry);
+            while (node != NULL) {
+                hm_put(hashmap, node->key, node->data, node->data_size);
+                old_node = node;
+                node = node->next;
+                free(old_node);
             }
         }
     }

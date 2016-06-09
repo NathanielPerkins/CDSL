@@ -10,40 +10,31 @@
 
 #include "HashMap.h"
 
-#define HASHMAP_SIZE 2
+#define HASHMAP_SIZE 128
 
 int main(void) {
-    struct hm_hashmap hashmap;
+    struct hashmap_t *hashmap;
 
-    hm_create(&hashmap, HASHMAP_SIZE);
+    hashmap = hm_create(HASHMAP_SIZE);
 
-    char test_value1[] = "test_value1";
-    char test_value2[] = "test_value2";
-    char test_value3[] = "test_value3";
-    char test_value4[] = "test_value4";
-    char test_value69[]  = "test_value69";
-
-    hm_put(&hashmap, "test_key1", &test_value1);
-    hm_put(&hashmap, "test_key2", &test_value2);
-    hm_put(&hashmap, "test_key3", &test_value3);
-    hm_put(&hashmap, "test_key4", &test_value4);
-
-    hm_put(&hashmap, "test_key69", &test_value69);
-
-    hm_put(&hashmap, "test_key6", &test_value1);
-
-    char key[16];
-    void *value;
-    for (int i = hashmap.size; i >= 1; i--) {
-        sprintf(key, "test_key%d", i);
-        value = hm_get(&hashmap, key);
-        printf("Getting Key: %s, Value: %s\n", key, value);
+    char test_key[16];
+    for (int i = 0; i < 16; i++) {
+        sprintf(test_key, "test_key%d", i);
+        hm_put(hashmap, test_key, &i, sizeof(i));
     }
 
-    value = hm_get(&hashmap, "doesnt_exist");
-    value == NULL ? printf("Key not found\n") : printf("Getting Key: %s, Value: %s\n", key, value);
+    char key[16];
+    int *value;
+    for (int i = 0; i < hashmap->size; i++) {
+        sprintf(key, "test_key%d", i);
+        value = hm_get(hashmap, key);
+        (value == NULL) ? printf("Key not found\n") : printf("Getting Key: %s, Value: %d\n", key, *value);
+    }
 
-    hm_free(&hashmap);
+    printf("Hashmap size: %d\n", hashmap->size);
+    printf("Hashmap entries: %d\n", hashmap->entries);
+
+    hm_free(hashmap);
 
     return EXIT_SUCCESS;
 }
