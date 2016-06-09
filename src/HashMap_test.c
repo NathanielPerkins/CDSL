@@ -10,7 +10,7 @@
 
 #include "HashMap.h"
 
-#define HASHMAP_SIZE 128
+#define HASHMAP_SIZE 32
 
 int main(void) {
     struct hashmap_t *hashmap;

@@ -26,7 +26,9 @@ void hm_free(struct hashmap_t *hashmap) {
         node = &(hashmap->table[i]);
 
         if (node->key != NULL) {
-            /* First data is stored in the array, don't free it. */
+            /* First node is stored in the array, don't free it. */
+            free(node->key);
+            free(node->data);
             node = node->next;
 
             /* Check for chained entries. */
@@ -55,7 +57,7 @@ void hm_put(struct hashmap_t *hashmap, char *key, void *data, size_t data_size) 
     struct hashmap_node_t *node = &(hashmap->table[bucket]);
     struct hashmap_node_t *prev = node;
     if (node->key == NULL) { /* Empty bucket. */
-        node->key = malloc(sizeof(char) * strlen(key));
+        node->key = malloc(sizeof(char) * strlen(key) + 1); /* + 1 byte for null character. */
         node->data = malloc(data_size);
         strcpy(node->key, key);
         memcpy(node->data, data, data_size);
@@ -82,7 +84,7 @@ void hm_put(struct hashmap_t *hashmap, char *key, void *data, size_t data_size) 
 
     /* Add to chain of entries. */
     struct hashmap_node_t *new_node = malloc(sizeof(struct hashmap_node_t));
-    new_node->key = malloc(sizeof(char) * strlen(key));
+    new_node->key = malloc(sizeof(char) * strlen(key) + 1); /* + 1 byte for null character. */
     new_node->data = malloc(data_size);
     strcpy(new_node->key, key);
     memcpy(new_node->data, data, data_size);
@@ -140,13 +142,17 @@ void hm_resize(struct hashmap_t *hashmap) {
         node = &(old_table[i]);
 
         if (node->key != NULL) {
-            /* First data is stored in the array, don't free it. */
+            /* First node is stored in the array, don't free it. */
             hm_put(hashmap, node->key, node->data, node->data_size);
+            free(node->key);
+            free(node->data);
             node = node->next;
 
             /* Check for chained entries. */
             while (node != NULL) {
                 hm_put(hashmap, node->key, node->data, node->data_size);
+                free(node->key);
+                free(node->data);
                 old_node = node;
                 node = node->next;
                 free(old_node);
