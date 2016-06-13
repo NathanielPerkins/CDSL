@@ -11,7 +11,7 @@
 
 struct hashmap_t *hm_create(uint32_t size) {
     struct hashmap_t *hashmap = malloc(sizeof(struct hashmap_t));
-    hashmap->entries = 0;
+    hashmap->nodes = 0;
     hashmap->size = size;
     hashmap->table = calloc(size, sizeof(struct hashmap_node_t));
 
@@ -31,7 +31,7 @@ void hm_free(struct hashmap_t *hashmap) {
             free(node->data);
             node = node->next;
 
-            /* Check for chained entries. */
+            /* Check for chained nodes. */
             while (node != NULL) {
                 free(node->key);
                 free(node->data);
@@ -47,7 +47,7 @@ void hm_free(struct hashmap_t *hashmap) {
 }
 
 void hm_put(struct hashmap_t *hashmap, void *key, void *data, size_t key_size, size_t data_size) {
-    if (((double) hashmap->entries / hashmap->size) > LOAD_FACTOR) { /* Resize the array. */
+    if (((double) hashmap->nodes / hashmap->size) > LOAD_FACTOR) { /* Resize the array. */
         hm_resize(hashmap);
     }
 
@@ -58,8 +58,8 @@ void hm_put(struct hashmap_t *hashmap, void *key, void *data, size_t key_size, s
     struct hashmap_node_t *prev = node;
 
     /* If bucket is used iterate over nodes in bucket and check for existing key. */
-    while (node->key != NULL) {
-        if (strcmp(key, node->key) == 0) { /* Key already exists, overwrite data. */
+    while (node != NULL && node->key != NULL) {
+        if (memcmp(key, node->key, key_size) == 0) { /* Key already exists, overwrite data. */
             free(node->data);
             node->data = malloc(data_size);
             memcpy(node->data, data, data_size);
@@ -83,7 +83,7 @@ void hm_put(struct hashmap_t *hashmap, void *key, void *data, size_t key_size, s
     node->data_size = data_size;
     node->next = NULL;
 
-    hashmap->entries++;
+    hashmap->nodes++;
 }
 
 void *hm_get(struct hashmap_t *hashmap, void *key, size_t key_size) {
@@ -91,7 +91,7 @@ void *hm_get(struct hashmap_t *hashmap, void *key, size_t key_size) {
 
     struct hashmap_node_t *node = &(hashmap->table[bucket]);
     while (node != NULL && node->key != NULL) {
-        if (strcmp(key, node->key) == 0) {
+        if (memcmp(key, node->key, key_size) == 0) {
             return node->data;
         } else {
             node = node->next;
@@ -101,11 +101,52 @@ void *hm_get(struct hashmap_t *hashmap, void *key, size_t key_size) {
     return NULL; /* Key not found. */
 }
 
+int8_t hm_remove(struct hashmap_t *hashmap, void *key, size_t key_size) {
+    uint32_t hash = hm_hash(key, key_size);
+    uint32_t bucket = hash % hashmap->size;
+
+    struct hashmap_node_t *node = &(hashmap->table[bucket]);
+    struct hashmap_node_t *prev = node;
+
+    /* Case 1: Only entry in bucket. */
+    while (node != NULL && node->key != NULL) {
+        if (memcmp(key, node->key, key_size) == 0) {
+            free(node->key);
+            free(node->data);
+            if (node->next == NULL) { /* First node with no chained node(s). */
+                node->key = NULL;
+                node->data = NULL;
+                node->key_size = 0;
+                node->data_size = 0;
+            } else if (prev == node) { /* First node with chained node(s). */
+                node = node->next;
+                prev->key = node->key;
+                prev->data = node->data;
+                prev->key_size = node->key_size;
+                prev->data_size = node->data_size;
+                prev->next = node->next;
+                free(node);
+            } else { /* Node in chain. */
+                prev->next = node->next;
+                free(node);
+            }
+
+            hashmap->nodes--;
+            return 1; /* Successfully removed node. */
+        } else {
+            prev = node;
+            node = node->next;
+        }
+    }
+
+    return 0; /* Node does not exist. Nothing removed. */
+}
+
 void hm_resize(struct hashmap_t *hashmap) {
     uint32_t old_size = hashmap->size;
     struct hashmap_node_t *old_table = hashmap->table;
 
-    hashmap->entries = 0;
+    hashmap->nodes = 0;
     hashmap->size = old_size * 2;
     hashmap->table = calloc(hashmap->size, sizeof(struct hashmap_node_t));
 
@@ -122,7 +163,7 @@ void hm_resize(struct hashmap_t *hashmap) {
             free(node->data);
             node = node->next;
 
-            /* Check for chained entries. */
+            /* Check for chained nodes. */
             while (node != NULL) {
                 hm_put(hashmap, node->key, node->data, node->key_size, node->data_size);
                 free(node->key);
