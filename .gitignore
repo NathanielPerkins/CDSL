@@ -1,3 +1,6 @@
 # CLion project files.
 .idea
 CMakeLists.txt
+
+# External libraries.
+external
