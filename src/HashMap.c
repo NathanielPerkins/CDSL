@@ -46,21 +46,22 @@ void hm_free(struct hashmap_t *hashmap) {
     free(hashmap);
 }
 
-void hm_put(struct hashmap_t *hashmap, char *key, void *data, size_t data_size) {
+void hm_put(struct hashmap_t *hashmap, void *key, void *data, size_t key_size, size_t data_size) {
     if (((double) hashmap->entries / hashmap->size) > LOAD_FACTOR) { /* Resize the array. */
         hm_resize(hashmap);
     }
 
-    uint32_t hash = hm_hash(key);
+    uint32_t hash = hm_hash(key, key_size);
     uint32_t bucket = hash % hashmap->size;
 
     struct hashmap_node_t *node = &(hashmap->table[bucket]);
     struct hashmap_node_t *prev = node;
     if (node->key == NULL) { /* Empty bucket. */
-        node->key = malloc(sizeof(char) * strlen(key) + 1); /* + 1 byte for null character. */
+        node->key = malloc(key_size);
         node->data = malloc(data_size);
-        strcpy(node->key, key);
+        memcpy(node->key, key, key_size);
         memcpy(node->data, data, data_size);
+        node->key_size = key_size;
         node->data_size = data_size;
         node->next = NULL;
 
@@ -83,11 +84,16 @@ void hm_put(struct hashmap_t *hashmap, char *key, void *data, size_t data_size) 
     }
 
     /* Add to chain of entries. */
+//    if (prev != node) {
+//        struct hashmap_node_t *node = malloc(sizeof(struct hashmap_node_t));
+//        prev->next = node;
+//    }
     struct hashmap_node_t *new_node = malloc(sizeof(struct hashmap_node_t));
-    new_node->key = malloc(sizeof(char) * strlen(key) + 1); /* + 1 byte for null character. */
+    new_node->key = malloc(key_size);
     new_node->data = malloc(data_size);
-    strcpy(new_node->key, key);
+    memcpy(new_node->key, key, key_size);
     memcpy(new_node->data, data, data_size);
+    new_node->key_size = key_size;
     new_node->data_size = data_size;
     new_node->next = NULL;
 
@@ -95,8 +101,8 @@ void hm_put(struct hashmap_t *hashmap, char *key, void *data, size_t data_size) 
     hashmap->entries++;
 }
 
-void *hm_get(struct hashmap_t *hashmap, char *key) {
-    uint32_t bucket = hm_hash(key) % hashmap->size;
+void *hm_get(struct hashmap_t *hashmap, void *key, size_t key_size) {
+    uint32_t bucket = hm_hash(key, key_size) % hashmap->size;
 
     struct hashmap_node_t *node = &(hashmap->table[bucket]);
     while (node != NULL && node->key != NULL) {
@@ -108,23 +114,6 @@ void *hm_get(struct hashmap_t *hashmap, char *key) {
     }
 
     return NULL; /* Key not found. */
-}
-
-/* Simple Bob Jenkins's hash algorithm taken from the wikipedia description. */
-uint32_t hm_hash(char *key) {
-    size_t len = strlen(key);
-    uint32_t hash = 0;
-
-    for (uint32_t i = 0; i < len; ++i) {
-        hash += key[i];
-        hash += (hash << 10);
-        hash ^= (hash >> 6);
-    }
-    hash += (hash << 3);
-    hash ^= (hash >> 11);
-    hash += (hash << 15);
-
-    return hash;
 }
 
 void hm_resize(struct hashmap_t *hashmap) {
@@ -143,14 +132,14 @@ void hm_resize(struct hashmap_t *hashmap) {
 
         if (node->key != NULL) {
             /* First node is stored in the array, don't free it. */
-            hm_put(hashmap, node->key, node->data, node->data_size);
+            hm_put(hashmap, node->key, node->data, node->key_size, node->data_size);
             free(node->key);
             free(node->data);
             node = node->next;
 
             /* Check for chained entries. */
             while (node != NULL) {
-                hm_put(hashmap, node->key, node->data, node->data_size);
+                hm_put(hashmap, node->key, node->data, node->key_size, node->data_size);
                 free(node->key);
                 free(node->data);
                 old_node = node;
@@ -161,4 +150,20 @@ void hm_resize(struct hashmap_t *hashmap) {
     }
 
     free(old_table);
+}
+
+/* Simple Bob Jenkins's hash algorithm taken from the wikipedia description. */
+uint32_t hm_hash(void *key, size_t key_len) {
+    uint32_t hash = 0;
+
+    for (uint32_t i = 0; i < key_len; ++i) {
+        hash += ((uint8_t *) key)[i]; /* Cast to uint8_t pointer to dereference and get 1 byte. */
+        hash += (hash << 10);
+        hash ^= (hash >> 6);
+    }
+    hash += (hash << 3);
+    hash ^= (hash >> 11);
+    hash += (hash << 15);
+
+    return hash;
 }
