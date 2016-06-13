@@ -56,21 +56,9 @@ void hm_put(struct hashmap_t *hashmap, void *key, void *data, size_t key_size, s
 
     struct hashmap_node_t *node = &(hashmap->table[bucket]);
     struct hashmap_node_t *prev = node;
-    if (node->key == NULL) { /* Empty bucket. */
-        node->key = malloc(key_size);
-        node->data = malloc(data_size);
-        memcpy(node->key, key, key_size);
-        memcpy(node->data, data, data_size);
-        node->key_size = key_size;
-        node->data_size = data_size;
-        node->next = NULL;
 
-        hashmap->entries++;
-        return;
-    }
-
-    /* Iterate over nodes in bucket and check for existing key. */
-    while (node != NULL) {
+    /* If bucket is used iterate over nodes in bucket and check for existing key. */
+    while (node->key != NULL) {
         if (strcmp(key, node->key) == 0) { /* Key already exists, overwrite data. */
             free(node->data);
             node->data = malloc(data_size);
@@ -83,21 +71,18 @@ void hm_put(struct hashmap_t *hashmap, void *key, void *data, size_t key_size, s
         }
     }
 
-    /* Add to chain of entries. */
-//    if (prev != node) {
-//        struct hashmap_node_t *node = malloc(sizeof(struct hashmap_node_t));
-//        prev->next = node;
-//    }
-    struct hashmap_node_t *new_node = malloc(sizeof(struct hashmap_node_t));
-    new_node->key = malloc(key_size);
-    new_node->data = malloc(data_size);
-    memcpy(new_node->key, key, key_size);
-    memcpy(new_node->data, data, data_size);
-    new_node->key_size = key_size;
-    new_node->data_size = data_size;
-    new_node->next = NULL;
+    if (prev != node) { /* Bucket is used. Allocate a new node and point previous node to it. */
+        node = malloc(sizeof(struct hashmap_node_t));
+        prev->next = node;
+    }
+    node->key = malloc(key_size);
+    node->data = malloc(data_size);
+    memcpy(node->key, key, key_size);
+    memcpy(node->data, data, data_size);
+    node->key_size = key_size;
+    node->data_size = data_size;
+    node->next = NULL;
 
-    prev->next = new_node;
     hashmap->entries++;
 }
 
