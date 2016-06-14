@@ -7,7 +7,7 @@
 
 #include "HashMap.h"
 
-#include <string.h> // strcmp()
+#include <string.h> /* memcpy() & memcmp() */
 
 struct hashmap_t *hm_create(uint32_t size) {
     struct hashmap_t *hashmap = malloc(sizeof(struct hashmap_t));

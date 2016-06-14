@@ -66,7 +66,19 @@ void test_PutAndGet_ADTKeyAndIntData(void) {
     TEST_ASSERT_NULL(hm_get(hashmap, &bruce, sizeof(bruce)));
 }
 
-void test_Remove_OnlyNode(void) {
+void test_Put_SameKeyDifferentData(void) {
+    char one_key[8] = "one";
+    char two_key[8] = "two";
+    int one = 1;
+    int two = 2;
+
+    hm_put(hashmap, one_key, &one, strlen(one_key), sizeof(one));
+    hm_put(hashmap, one_key, &two, strlen(one_key), sizeof(two));
+
+    TEST_ASSERT_EQUAL_MEMORY(&two, hm_get(hashmap, one_key, strlen(one_key)), sizeof(two));
+}
+
+void test_Remove(void) {
     struct person_t steven = {"Steven", "Rogers"};
     struct address_t address_1 = {1, "Street Rd"};
 
@@ -74,6 +86,15 @@ void test_Remove_OnlyNode(void) {
     hm_remove(hashmap, &steven, sizeof(steven));
 
     TEST_ASSERT_NULL(hm_get(hashmap, &steven, sizeof(steven)));
+}
+
+void test_Remove_Twice(void) {
+    struct person_t steven = {"Steven", "Rogers"};
+    struct address_t address_1 = {1, "Street Rd"};
+
+    hm_put(hashmap, &steven, &address_1, sizeof(steven), sizeof(address_1));
+    hm_remove(hashmap, &steven, sizeof(steven));
+    TEST_ASSERT_EQUAL_INT8(0, hm_remove(hashmap, &steven, sizeof(steven)));
 }
 
 void test_Remove_OneOfManyNodes(void) {
@@ -107,7 +128,9 @@ int main(void)
     RUN_TEST(test_Create_SuccessfullyAllocatesHashmap);
     RUN_TEST(test_PutAndGet_StringKeyAndIntData);
     RUN_TEST(test_PutAndGet_ADTKeyAndIntData);
-    RUN_TEST(test_Remove_OnlyNode);
+    RUN_TEST(test_Put_SameKeyDifferentData);
+    RUN_TEST(test_Remove);
+    RUN_TEST(test_Remove_Twice);
     RUN_TEST(test_Remove_OneOfManyNodes);
     RUN_TEST(test_Remove_NotInHashmap);
     return UNITY_END();
